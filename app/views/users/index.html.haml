@@ -1,6 +1,9 @@
 - content_for :title, 'Users'
 - content_for :action_bar do
-  %span= link_to('Add a New User', new_user_path, :class => 'add')
+  %span
+    = link_to(new_user_path) do
+      %i.fa.fa-plus-circle
+      = t('.new')
 
 %table.users
   %thead
@@ -13,8 +16,8 @@
       %th.main Email
       %th Admin?
   %tbody
-    - @users.each do |user|
-      %tr
+    - users.each do |user|
+      %tr.user_list
         - if Errbit::Config.use_gravatar
           %td= gravatar_tag user.email, :s => 24
         %td.nowrap= link_to user.name, user_path(user)
@@ -22,5 +25,5 @@
           %td= user.username
         %td= user.email
         %td= user.admin? ? 'Y' : 'N'
-= paginate @users
+= paginate users
 

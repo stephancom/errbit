@@ -2,8 +2,8 @@ require 'acceptance/acceptance_helper'
 
 feature 'Sign in with GitHub' do
   background do
-    Errbit::Config.stub(:github_authentication) { true }
-    Fabricate(:user, :github_login => 'nashby')
+    allow(Errbit::Config).to receive(:github_authentication).and_return(true)
+    Fabricate(:user, github_login: 'nashby')
   end
 
   scenario 'log in via GitHub with recognized user' do
@@ -11,7 +11,7 @@ feature 'Sign in with GitHub' do
 
     visit '/'
     click_link 'Sign in with GitHub'
-    page.should have_content 'Successfully authorized from GitHub account'
+    expect(page).to have_content I18n.t("devise.omniauth_callbacks.success", kind: 'GitHub')
   end
 
   scenario 'reject unrecognized user if authenticating via GitHub' do
@@ -19,6 +19,6 @@ feature 'Sign in with GitHub' do
 
     visit '/'
     click_link 'Sign in with GitHub'
-    page.should have_content 'There are no authorized users with GitHub login'
+    expect(page).to have_content 'There are no authorized users with GitHub login'
   end
 end

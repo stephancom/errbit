@@ -1,34 +1,42 @@
-Errbit::Application.routes.draw do
-
-  devise_for :users, :controllers => { :omniauth_callbacks => "users/omniauth_callbacks" }
+Rails.application.routes.draw do
+  devise_for :users, controllers: { omniauth_callbacks: "users/omniauth_callbacks" }
 
   # Hoptoad Notifier Routes
-  match '/notifier_api/v2/notices' => 'notices#create'
-  match '/locate/:id' => 'notices#locate', :as => :locate
-  match '/deploys.txt' => 'deploys#create'
+  match '/notifier_api/v2/notices' => 'notices#create', via: [:get, :post]
+  get '/locate/:id' => 'notices#locate', :as => :locate
 
-  resources :notices,   :only => [:show]
-  resources :deploys,   :only => [:show]
+  resources :notices, only: [:show]
   resources :users do
     member do
       delete :unlink_github
     end
   end
-  resources :problems,      :only => [:index] do
+
+  resources :site_config, only: [:index] do
+    collection do
+      put :update
+    end
+  end
+
+  resources :problems, only: [:index] do
     collection do
       post :destroy_several
       post :resolve_several
       post :unresolve_several
       post :merge_several
       post :unmerge_several
-      get :search, :format => [:js]
+      get :search
     end
   end
 
   resources :apps do
     resources :problems do
       resources :notices
-      resources :comments, :only => [:create, :destroy]
+      resources :comments, only: [:create, :destroy]
+
+      collection do
+        post :destroy_all
+      end
 
       member do
         put :resolve
@@ -37,15 +45,17 @@ Errbit::Application.routes.draw do
         delete :unlink_issue
       end
     end
-
-    resources :deploys, :only => [:index]
+    resources :watchers, only: [:destroy, :update]
+    member do
+      post :regenerate_api_key
+    end
   end
 
   namespace :api do
     namespace :v1 do
-      resources :problems, :only => [:index], :defaults => { :format => 'json' }
-      resources :notices,  :only => [:index], :defaults => { :format => 'json' }
-      resources :stats, :only => [], :defaults => { :format => 'json' } do
+      resources :problems, only: [:index, :show], defaults: { format: 'json' }
+      resources :notices,  only: [:index], defaults: { format: 'json' }
+      resources :stats, only: [], defaults: { format: 'json' } do
         collection do
           get :app
         end
@@ -53,7 +63,8 @@ Errbit::Application.routes.draw do
     end
   end
 
-  root :to => 'apps#index'
+  match '/api/v3/projects/:project_id/create-notice' => 'api/v3/notices#create', via: [:post]
+  match '/api/v3/projects/:project_id/notices' => 'api/v3/notices#create', via: [:post, :options]
 
+  root to: 'apps#index'
 end
-
